@@ -42,7 +42,7 @@ changes in SBP for the two groups (within and between).
 my_controls <- arsenal::tableby.control(
                total = F,
                test=F,  # No test p-values yet
-               numeric.stats = c("meansd", "medianq1q3", "range"),
+               numeric.stats = c("meansd", "medianq1q3"),
                cat.stats = c("countpct"),
                stats.labels = list(
                meansd = "Mean (SD)",
@@ -176,8 +176,8 @@ $$\begin{aligned}
 `r prob_1_2_t$estimate[[2]]`
 = `r prob_1_2_t$estimate[[1]] - prob_1_2_t$estimate[[2]]`\\\\
 s_{pool} = \frac{(n_1-1)s_1 + (n_0 -1)s_0}{n_1+n_0-2}\\
-=\frac{(36-1)*`r prob_1_2 %>% filter(intervention ==1) %>% select(standard_deviate)` + (36 -1)*`r prob_1_2 %>% filter(intervention ==0) %>% select(standard_deviate)`}{36+36-2}\\
-=`r ((36-1)*17.169+(36-1)*14.813)/(36+36-2)`\\\\
+=\frac{(36-1)*`r prob_1_2 %>% filter(intervention ==1) %>% select(standard_deviate) %>% round()` + (36 -1)*`r prob_1_2 %>% filter(intervention ==0) %>% select(standard_deviate) %>% round()`}{36+36-2}\\
+=`r ((36-1)*prob_1_2 %>% filter(intervention ==1) %>% select(standard_deviate)+(36-1)*prob_1_2 %>% filter(intervention ==0) %>% select(standard_deviate))/(36+36-2)`\\\\
 t = \frac{\bar{X_1} - \bar{X_0}}
 {s_{pool}\times\sqrt{\frac{1}{n_1}+\frac{1}{n_0}}} \\
 =  `r prob_1_2_t$statistic` \sim t_{36+36-2}
