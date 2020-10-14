@@ -9,14 +9,17 @@ output: #html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
-knitr::opts_chunk$set(echo = FALSE, message = F, warning = F)
-options(
-    fig.height = 6,
+set.seed(1234)
+knitr::opts_chunk$set(
+  fig.height = 6,
   fig.width = 8,
   message =F,
-  warning = F
+  warning = F,
+  echo = F
   )
+
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
 options(
   ggplot2.continuous.colour = "viridis",
   ggplot2.continuous.fill = "viridis",
@@ -185,7 +188,7 @@ t = \frac{\bar{X_1} - \bar{X_0}}
 
   According to the critical value we choose(`r qt(0.975,70)`), we cannot reject $H_0$ that there's difference between the difference of baseline systolic BP and 6 month later in intervention group and control group.
 
-1) The testing in 1),2) are based on that sample distributions fit normality. As ploted as follow, the sample distribution statisfied normality requirement for testing.
+3) The testing in 1),2) are based on that sample distributions fit normality. As ploted as follow, the sample distribution statisfied normality requirement for testing.
 
     But if the sample size is skewed, there're:
     
@@ -261,24 +264,25 @@ a) Final conclusions: compare the type I errors (percentage of 1s) from part b) 
 do they compare to the level that we initially imposed (i.e. 0.05)? Comment on your
 findings. (5p)
 
-```{r}
-null_sim = 
+```{r simulation ,echo =T}
+null_sim = #generate random sample under H0
   function(sample_size = 20,repeat_time = 10){
-    #collect
+    #collect random sample
     return_value = list()
     repeat{
       return_value = 
-        append(return_value,list(rnorm(sample_size,120,15)))
+        append(return_value,
+               list(rnorm(sample_size,120,15))) #random sample generate
       if (length(return_value) >= repeat_time){
         break
       }
     }
-    #return
+    #return collect random sample as list
     return(return_value)
   }
 
 z_test = function(
-  x = rep(0,10),
+  x = NA, #take the list from null_sim
   mu = 0,
   sample_variance = NA,
   method = "less"
@@ -286,40 +290,86 @@ z_test = function(
   x_mean = c()
   x_se = c()
   x_zscore = c()
-  #x_p = c()
+  x_p = c()
   x_H0 = c()
-  if (is.list(x)){
+  if (is.list(x)){ #for multi-simulation
     for (i in seq(1,length(x),1)){
       x_mean = append(x_mean,mean(x[[i]]))
       x_se = append(x_se,sample_variance/sqrt(length(x[[i]])))
       x_zscore = 
         append(x_zscore,(x_mean[[i]] - mu)/x_se[[i]])
-      #x_p = append(x_p,1 - pnorm(abs(x_zscore[[i]])))
+      x_p = append(x_p,1 - pnorm(abs(x_zscore[[i]])))
       x_H0 = append(x_H0,x_zscore[[i]]<qnorm(0.05))
     }
-  } else{
+  } else{ #for one row vector
     x_mean = mean(x)
       x_se = sample_variance/sqrt(length(x))
       x_zscore = (x_mean - mu)/x_se
-      #x_p = 1 - pnorm(abs(x_zscore))
+      x_p = 1 - pnorm(abs(x_zscore))
       x_H0 = x_zscore<qnorm(0.05)
   }
+  #return the test result as tibble for better statistics summary
   return(tibble(
     zscore = x_zscore,
-    #p_value = x_p,
+    #p_value = x_p, #Future features
     Reject_H0 = x_H0
   ))
 }
-sim_1 = z_test(null_sim(repeat_time = 1),mu = 120, sample_variance = 15)
-
-sim_1 %>% janitor::tabyl(Reject_H0)
-
-sim_2 = z_test(null_sim(repeat_time = 100),mu = 120, sample_variance = 15)
-
-sim_2 %>% janitor::tabyl(Reject_H0)
-
-sim_3 = z_test(null_sim(repeat_time = 1000),mu = 120, sample_variance = 15)
-
-sim_3 %>% janitor::tabyl(Reject_H0)
 ```
 
+a) 
+  I have write 2 function to approach this question, the first function _null_sim_ is function that take sample size and repeated times to generate n times the n size random sample draw from the $\mathcal{N}(120,15)$. And the second function I wrote is _z_test_, which take the parameter of list of value generate from _null_sim_ and then produce test statistics and Hypothesis test result.
+  Noted that the population mean and variance are known, and see that the alternative hypothesis is "the true mean is less than 120", so One-side test is perform.
+  The test-statistics is calculate via:
+  $$\begin{aligned}
+  z~score = \frac{\bar{X} - \mu}{\sigma/\sqrt{n}}
+  \end{aligned}$$
+  we have chosen the Type-I error rate of 0.05, so the critical value for the test statistics is `r qnorm(0.05)`. Any test statistics fall below this value and we reject the Null Hypothesis and return _TRUE_ value to columns name _Reject_H0_.
+  Using the two function, we have generate 1 sample of sample size 20 and conducted hypothesis testing, the result to the problem:
+```{r simulation_1, echo = T}
+samp = null_sim(repeat_time = 1)
+
+print(samp)
+
+tibble(value = as.vector(samp[[1]])) %>%
+  summarise(mean = mean(value),
+            standard_deviate = sd(value))
+
+sim_1 = z_test(samp,mu = 120, sample_variance = 15)
+
+sim_1 %>% janitor::tabyl(Reject_H0)
+```
+
+```{r}
+if (sim_1[1,2] == T){
+  cat(paste("We reject H0 because the test statistics calculated is\n ",sim_1[1,1] %>% round()," and fall below critical value"))
+} else {
+  cat(paste("We fail to reject H0 because the test statistics calculated is \n",sim_1[1,1] %>% round()," and fall above critical value"))
+}
+```
+
+Using the same method, I generate the result for the following question:
+
+b)
+```{r simulation_2}
+sim_2 = z_test(null_sim(repeat_time = 100),mu = 120, sample_variance = 15)  %>% janitor::tabyl(Reject_H0)
+
+sim_2
+```
+    So under the 100 times simulation, we make `r sim_2 %>% filter(Reject_H0 == T) %>% pull(n)` times mistakes for rejecting H0 while the H0 is indeed correct.
+  $P(Type~I~error \mid H_0) = \frac{number~of~time~we~reject~H_0~while~H_0~is~TRUE}{number~of~trails~under~H_0} = `r sim_2 %>% filter(Reject_H0 == T) %>% pull(percent)`$
+  
+c) 
+```{r simulation_3}
+sim_3 = z_test(null_sim(repeat_time = 1000),mu = 120, sample_variance = 15) %>% janitor::tabyl(Reject_H0)
+
+sim_3 
+```
+    So under the 1000 times simulation, we make `r sim_3 %>% filter(Reject_H0 == T) %>% pull(n)` times mistakes for rejecting H0 while the H0 is indeed correct.
+  $P(Type~I~error \mid H_0) = \frac{number~of~time~we~reject~H_0~while~H_0~is~TRUE}{number~of~trails~under~H_0} = `r sim_3 %>% filter(Reject_H0 == T) %>% pull(percent)`$
+
+d) After the simulation from above, we have $P(Type~I~error \mid H_0)$ of `r sim_2 %>% filter(Reject_H0 == T) %>% pull(percent)` and `r sim_3 %>% filter(Reject_H0 == T) %>% pull(percent)` for 100 and 1000 times simulation. Both figures are not exactly equal but close to the set alpha rate of the setting, and the result from 1000 times simulation is closer compared to 100 times. 
+
+    If we set the sample size to 100 and do a 1000 times simulation we still have 
+`r  z_test(null_sim(sample_size = 100,repeat_time = 1000),mu = 120, sample_variance = 15) %>% janitor::tabyl(Reject_H0) %>% filter(Reject_H0 == T) %>% pull(percent)` of $P(Type~I~error \mid H_0)$
+, so the only method to lower $P(Type~I~error \mid H_0)$ is to set the $\alpha$ rate to a smaller value.
