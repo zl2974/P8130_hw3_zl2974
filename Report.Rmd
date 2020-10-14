@@ -370,6 +370,6 @@ sim_3
 
 d) After the simulation from above, we have $P(Type~I~error \mid H_0)$ of `r sim_2 %>% filter(Reject_H0 == T) %>% pull(percent)` and `r sim_3 %>% filter(Reject_H0 == T) %>% pull(percent)` for 100 and 1000 times simulation. Both figures are not exactly equal but close to the set alpha rate of the setting, and the result from 1000 times simulation is closer compared to 100 times. 
 
-    If we set the sample size to 100 and do a 1000 times simulation we still have 
-`r  z_test(null_sim(sample_size = 100,repeat_time = 1000),mu = 120, sample_variance = 15) %>% janitor::tabyl(Reject_H0) %>% filter(Reject_H0 == T) %>% pull(percent)` of $P(Type~I~error \mid H_0)$
-, so the only method to lower $P(Type~I~error \mid H_0)$ is to set the $\alpha$ rate to a smaller value.
+    If we set the sample size to 100 and do a 10000 times simulation we still have 
+`r  z_test(null_sim(sample_size = 100,repeat_time = 10000),mu = 120, sample_variance = 15) %>% janitor::tabyl(Reject_H0) %>% filter(Reject_H0 == T) %>% pull(percent)` of $P(Type~I~error \mid H_0)$
+, which is still around $\alpha$. So the only method to lower $P(Type~I~error \mid H_0)$ is to set the $\alpha$ rate to a smaller value before testing.
