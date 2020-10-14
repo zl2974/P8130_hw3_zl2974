@@ -1,0 +1,325 @@
+---
+title: "P8130_hw3_zl2974"
+author: "Jeffrey Liang"
+date: "10/13/2020"
+output: #html_document
+  pdf_document:
+    latex_engine : "xelatex"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE, message = F, warning = F)
+options(
+    fig.height = 6,
+  fig.width = 8,
+  message =F,
+  warning = F
+  )
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis",
+  digits = 3
+)
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d 
+```
+
+# Problem 1 (30p)
+\ A study was conducted over a six-month period at a local ambulatory virology clinic. The goal
+was to test the effect of a structured exercise program for overweight/obese, virally suppressed
+HIV positive subjects on different parameters. A total of 36 individuals agreed to participate in
+the intervention group (group 1) and another group of 36 individuals were selected as controls
+(group 0). The table below shows descriptive statistics: mean(SD), median(Q1, Q3) to summarize
+the Systolic Blood Pressure (SBP) variable by groups at baseline (pre), at 6 months follow-up
+(post) and also the absolute changes (Δ=Post-Pre). We want to perform some tests to assess
+changes in SBP for the two groups (within and between).
+
+*For each question, make sure to state the formulae for hypotheses, test-statistics, decision rules/p-values, and provide interpretations in the context of the problem. Use a type I error of 0.05 for all tests*
+
+```{r table}
+my_controls <- arsenal::tableby.control(
+               total = F,
+               test=F,  # No test p-values yet
+               numeric.stats = c("meansd", "medianq1q3", "range"),
+               cat.stats = c("countpct"),
+               stats.labels = list(
+               meansd = "Mean (SD)",
+               medianq1q3 = "Median (Q1, Q3)",
+               range = "Min - Max",
+               Nmiss2 = "Missing",
+               countpct = "N (%)"))
+
+table_data = read_csv(here::here("Exercise.csv")) %>% 
+  janitor::clean_names() %>% 
+  select(intervention = group, everything()) %>% 
+  mutate(systolic_diff = systolic_pre - systolic_post,
+         id = seq(1,nrow(.),1)) %>% 
+  relocate(id) %>% 
+  pivot_longer(
+    cols = systolic_pre:systolic_post,
+    names_to = "month",
+    values_to = "systolic",
+    names_prefix = "systolic_"
+  ) %>% 
+  mutate(month = case_when(
+    month == "pre" ~ "baseline",
+    month == "post" ~ "6_month"
+  )) %>% 
+  mutate_at(.vars = c("intervention","month"),
+            as.character)
+summary(arsenal::tableby(intervention ~ systolic + systolic_diff,
+                         strata = month,
+                         data = table_data,
+                         control = my_controls
+  ),
+  text = TRUE)
+```
+
+a) Perform appropriate tests to assess if the Systolic BP at 6 months is significantly different
+from the baseline values for each of the groups:
+
+    i) Intervention group (5p)
+    i) Control group (5p)
+  
+a) Now perform a test and provide the 95% confidence interval to assess the Systolic BP
+absolute changes between the two groups. (12p)
+
+a) What are the main underlying assumptions for the tests performed in parts a) and b)? (3p)
+
+    i) Use graphical displays to check the normality assumption and discuss the findings. (3p)
+    i) If normality is questionable, how does this affect the tests validity and what are some
+possible remedies? (2p)
+
+```{r prob1_a_b}
+test_df = 
+  read_csv(here::here("Exercise.csv")) %>% 
+  janitor::clean_names() %>% 
+  select(intervention = group,everything()) %>% 
+  mutate(systolic_diff = systolic_pre -systolic_post)
+
+prob_1_1_a = t.test(test_df %>% filter(intervention ==1)%>%
+                    pull(systolic_pre),
+                  test_df %>% filter(intervention ==1) %>%
+                    pull(systolic_post), 
+                  paired = T) # answer to prob 1.a 
+
+prob_1_1_b =t.test(test_df %>% filter(intervention ==0) %>%
+                   pull(systolic_pre),
+                 test_df %>% filter(intervention ==0) %>%
+                   pull(systolic_post), 
+                 paired = T) # answer to prob 1.b
+
+prob_1_2_t = 
+  t.test(test_df %>% filter(intervention == 1) %>%  
+          pull(systolic_diff),
+        test_df %>% filter(intervention == 0) %>% 
+          pull(systolic_diff),
+        paired = F) # this is for question 1 b)
+
+prob_1_2 =
+  test_df %>% 
+  group_by(intervention) %>% 
+  summarise(standard_deviate =
+              sd(systolic_diff),
+            bar_x = mean(systolic_diff))
+
+prob_1_2_f = 
+  var.test(test_df %>% filter(intervention == 1) %>%  
+          pull(systolic_diff),
+        test_df %>% filter(intervention == 0) %>% 
+          pull(systolic_diff))
+```
+
+_PROOF_
+
+1) We use paired test for testing systolic BP difference within group of two measure point. Because the population variance is unknown, and we have no prior knowledge of how's systolic BP going to change in 6-month period so two-side paired t-test is used for this problem
+  
+    a. 
+    
+    $$\begin{aligned}
+    \bar{d} = \frac{\sum_{i=1}^n{d_i}}{n} = 
+    `r prob_1_1_a$estimate` \\
+    se = \sqrt{\sum_{i=1}^n{(d_i - \bar{d})^2}/(n-1)} =
+    `r prob_1_1_a$stderr`\\
+    t = \frac{\bar{d} - 0}{se} = `r prob_1_1_a$statistic` \sim t_{36-1}
+    \end{aligned}$$
+
+    With critical value $t_{36-1,1-\alpha/2} = `r qt(0.975,35)`$, we reject the Null hypothesis and conclude that there's difference between baseline systolic BP value and 6-month later in intervention group.
+
+    a. 
+    
+    $$\begin{aligned}
+    \bar{d} = \frac{\sum_{i=1}^n{d_i}}{n} = 
+    `r prob_1_1_b$estimate` \\
+    se = \sqrt{\sum_{i=1}^n{(d_i - \bar{d})^2}/(n-1)}
+    =`r prob_1_1_b$stderr`\\
+    t = \frac{\bar{d} - 0}{se} = `r prob_1_1_b$statistic` \sim t_{36-1}
+    \end{aligned}$$
+
+    With critical value $t_{36-1,1-\alpha/2} = `r qt(0.975,35)`$, we can not reject the Null hypothesis and conclude that there's no difference between baseline systolic BP value and 6-month later in control groups.
+
+1) Now that we compare two groups, and the population variance is unknown, we first test if the standard diviation of two groups is equal:
+$$\begin{aligned}
+s_{d_1} = \sum_{i=1}^{n_1}(d_i - \bar{d_1})^2/(n_1-1)
+= `r prob_1_2 %>% filter(intervention == 1) %>% pull(standard_deviate)`\\
+s_{d_0} = \sum_{j=1}^{n_1}(d_i - \bar{d_0})^2/(n_0-1)
+= `r prob_1_2 %>% filter(intervention == 0) %>% pull(standard_deviate)`\\
+F = s_1^2/s_0^2 = `r prob_1_2_f$statistic` \sim F_{n_1-1,n_0-1}
+\end{aligned}$$
+
+    With F-test critical value of `r qf(0.975,35,35)`, we cannot reject the null hypothesis that two sample variance is different. And we have no idea how's the intervention going to change the systolic value between groups, so two-side equal variance t-test is used.
+
+$$\begin{aligned}
+\bar{X_1} - \bar{X_0} = `r prob_1_2_t$estimate[[1]]` - 
+`r prob_1_2_t$estimate[[2]]`
+= `r prob_1_2_t$estimate[[1]] - prob_1_2_t$estimate[[2]]`\\\\
+s_{pool} = \frac{(n_1-1)s_1 + (n_0 -1)s_0}{n_1+n_0-2}\\
+=\frac{(36-1)*`r prob_1_2 %>% filter(intervention ==1) %>% select(standard_deviate)` + (36 -1)*`r prob_1_2 %>% filter(intervention ==0) %>% select(standard_deviate)`}{36+36-2}\\
+=`r ((36-1)*17.169+(36-1)*14.813)/(36+36-2)`\\\\
+t = \frac{\bar{X_1} - \bar{X_0}}
+{s_{pool}\times\sqrt{\frac{1}{n_1}+\frac{1}{n_0}}} \\
+=  `r prob_1_2_t$statistic` \sim t_{36+36-2}
+\end{aligned}$$
+
+  According to the critical value we choose(`r qt(0.975,70)`), we cannot reject $H_0$ that there's difference between the difference of baseline systolic BP and 6 month later in intervention group and control group.
+
+1) The testing in 1),2) are based on that sample distributions fit normality. As ploted as follow, the sample distribution statisfied normality requirement for testing.
+
+    But if the sample size is skewed, there're:
+    
+      - By central limit theorem, if our sample size is large enough, we will have a sample distribution approximate normal distribution
+      
+      - Use normal transformation: we have methods(eg. logorithm or square root) to transform our sample distribution to approximate normal.
+      
+      - Use bayesian inference or other statistics inference methods that don't rely on Normality assumption of the distribution.
+
+
+
+```{r prob_1_c}
+test_df %>% 
+  relocate(starts_with("systolic")) %>% 
+  pivot_longer(
+    cols = starts_with("systolic"),
+    names_to = "observation",
+    values_to = "values"
+  ) %>% 
+  mutate(intervention = case_when(
+    intervention == 1 ~ "Intervention Group",
+    intervention == 0 ~ "Control Group"
+  )) %>% 
+  ggplot(aes(x = values, fill = intervention,group = as.factor(intervention)))+
+  geom_histogram(bins = 20)+
+  facet_wrap(intervention~observation)+
+  theme(legend.position = "None")
+```
+
+
+
+
+
+# Problem 2 (25p)
+We have discussed the fact that we are not guaranteed to make the correct decision by the
+process of hypothesis testing and there is always some level of uncertainty in statistics. The two
+main errors that we are trying to minimize/control are type I and type II. A type I error occurs
+when we reject the null hypothesis $H_0$
+, when $H_0$
+is true. When we set the significance level at
+5%, we are saying that we will allow ourselves to make a type I error less than 5% of the time. In
+practice we can only calculate this probability using a series of “what if” calculations, because we
+do not really know the truth.
+In this exercise you learn how to create your own ‘true’ scenario, simulate corresponding data,
+and quantify the type I error over many repetitions.
+
+Scenario: The average IQ score of Ivy League colleges is 120. We will assume this to be the null
+hypothesis (true mean is 120) with a standard deviation of 15 and a significance level of 5%. For
+the alternative hypothesis we will consider that the ‘true mean is less than 120’.
+
+Most of the time (95%) when we generate a sample from the underlying true distribution, we
+should fail to reject the null hypothesis since the null hypothesis is true. Let us test it!
+
+a) Generate one random sample of size n=20 from the underlying (null) true distribution.
+Calculate the test statistic, compare to the critical value and report the conclusion: 1, if
+you reject $H_0$ or 0, if you fail to rejected $H_0$
+. (5p)
+Hint: use rnorm(20, mean = 120, sd = 15)
+
+a) Now generate 100 random samples of size n = 20 from the underlying (null) true
+distribution and repeat the process in part (a) for each sample (calculate the test statistic,
+compare to the critical value, and record 1 or 0 based on criteria above). Report the
+percentage of 1s and 0s respectively across the 100 samples. The percentage of 1s
+represents the type I error. (7.5p)
+Suggestions: use a for loop to loop over the 100 samples and create a variable using the
+function ifelse() to keep track of your 1’s and 0’s.
+
+a) Now generate 1000 random samples of size n = 20 from the underlying (null) true
+distribution, repeat the same process, and report the percentage of 1s and 0s across the
+1000 samples. (7.5p)
+
+a) Final conclusions: compare the type I errors (percentage of 1s) from part b) and c). How
+do they compare to the level that we initially imposed (i.e. 0.05)? Comment on your
+findings. (5p)
+
+```{r}
+null_sim = 
+  function(sample_size = 20,repeat_time = 10){
+    #collect
+    return_value = list()
+    repeat{
+      return_value = 
+        append(return_value,list(rnorm(sample_size,120,15)))
+      if (length(return_value) >= repeat_time){
+        break
+      }
+    }
+    #return
+    return(return_value)
+  }
+
+z_test = function(
+  x = rep(0,10),
+  mu = 0,
+  sample_variance = NA,
+  method = "less"
+){
+  x_mean = c()
+  x_se = c()
+  x_zscore = c()
+  #x_p = c()
+  x_H0 = c()
+  if (is.list(x)){
+    for (i in seq(1,length(x),1)){
+      x_mean = append(x_mean,mean(x[[i]]))
+      x_se = append(x_se,sample_variance/sqrt(length(x[[i]])))
+      x_zscore = 
+        append(x_zscore,(x_mean[[i]] - mu)/x_se[[i]])
+      #x_p = append(x_p,1 - pnorm(abs(x_zscore[[i]])))
+      x_H0 = append(x_H0,x_zscore[[i]]<qnorm(0.05))
+    }
+  } else{
+    x_mean = mean(x)
+      x_se = sample_variance/sqrt(length(x))
+      x_zscore = (x_mean - mu)/x_se
+      #x_p = 1 - pnorm(abs(x_zscore))
+      x_H0 = x_zscore<qnorm(0.05)
+  }
+  return(tibble(
+    zscore = x_zscore,
+    #p_value = x_p,
+    Reject_H0 = x_H0
+  ))
+}
+sim_1 = z_test(null_sim(repeat_time = 1),mu = 120, sample_variance = 15)
+
+sim_1 %>% janitor::tabyl(Reject_H0)
+
+sim_2 = z_test(null_sim(repeat_time = 100),mu = 120, sample_variance = 15)
+
+sim_2 %>% janitor::tabyl(Reject_H0)
+
+sim_3 = z_test(null_sim(repeat_time = 1000),mu = 120, sample_variance = 15)
+
+sim_3 %>% janitor::tabyl(Reject_H0)
+```
+
