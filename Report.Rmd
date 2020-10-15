@@ -204,11 +204,11 @@ t = \frac{\bar{X_1} - \bar{X_0}}
 =  `r prob_1_2_t$statistic` \sim t_{36+36-2}
 \end{aligned}$$
 
-  \ According to the critical value we choose(`r qt(0.975,70)`), we cannot reject $H_0$ that there's difference between the difference of baseline systolic BP and 6 month later in intervention group and control group.
+  \ According to the critical value we choose(`r qt(0.975,70)`), we cannot reject $H_0$ that there's no difference between the difference of baseline systolic BP and 6 month later in intervention group and control group.
 
-3) The testing in 1),2) are based on that sample distributions fit normality. As ploted as follow, the sample distribution statisfied normality requirement for testing.
+3) The testing in 1),2) are based on that sample is draw from a normal distributed population or the distributions fit normality. As ploted as follow, the sample distribution satisfied normality requirement for testing.
 
-    But if the sample size is skewed, there're:
+    But if the sample is skewed, there're:
     
       - By central limit theorem, if our sample size is large enough, we will have a sample distribution approximate normal distribution
       
