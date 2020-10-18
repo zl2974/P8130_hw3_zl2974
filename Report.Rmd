@@ -2,13 +2,14 @@
 title: "P8130_hw3_zl2974"
 author: "Jeffrey Liang"
 date: "10/13/2020"
-output: #html_document
+output:
   pdf_document:
     latex_engine : "xelatex"
 ---
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(patchwork)
 set.seed(1234)
 knitr::opts_chunk$set(
   fig.height = 6,
@@ -218,9 +219,13 @@ t = \frac{\bar{X_1} - \bar{X_0}}
 =  `r prob_1_2_t$statistic` \sim t_{36+36-2}
 \end{aligned}$$
 
+$$CI = (\bar{X_1}-\bar{X_2}~-~z_{1-\alpha/2}s_{pool}/\sqrt{n_1+n_2-1},
+~\bar{X_1}-\bar{X_2}~-~z_{1-\alpha/2}s_{pool}/\sqrt{n_1+n_2-1} )$$
+$$=~(`r prob_1_2_t$conf.int`)$$
+
   \ According to the critical value we choose(`r qt(0.025,70)`), we cannot reject $H_0$ that there's no difference between the difference of baseline systolic BP and 6 month later in intervention group and control group.
 
-3) The testing in 1),2) are based on that sample is draw from a normal distributed population or the distributions fit normality. And thus, if we used these test method upon a skewed(not normal) sample, the result of our interpretation can be wrong. As ploted as follow, the sample distribution satisfied normality requirement for testing.
+3) The testing in 1),2) are based on that sample is draw from a normal distributed population or the distributions fit normality. And thus, if we used these test method upon a skewed(not normal) sample, the result of our interpretation can be wrong. As plotted below, the sample distribution of within pairs difference, although observing a bipeak distribution in the intervention groups, using qq plot help us conclude that the point is center around qq line, satisfied normality requirement for testing.
 
     But if the sample is skewed, there're:
     
@@ -233,7 +238,7 @@ t = \frac{\bar{X_1} - \bar{X_0}}
 
 
 ```{r prob_1_c}
-test_df %>%
+plt_up = test_df %>%
   relocate(starts_with("systolic")) %>%
   pivot_longer(cols = starts_with("systolic"),
                names_to = "observation",
@@ -244,14 +249,40 @@ test_df %>%
       intervention == 0 ~ "Control Group"
     )
   ) %>%
-  ggplot(aes(
-    x = values,
-    fill = intervention,
-    group = as.factor(intervention)
-  )) +
-  geom_histogram(bins = 20) +
+  filter(observation == "systolic_diff") %>% 
+  ggplot(aes(x = values, color = as.factor(intervention))) +
+  geom_density() +
+  geom_histogram(
+    aes(
+      y = stat(density),
+      fill = intervention,
+      group = as.factor(intervention)
+    ),
+    bins = 20,
+    alpha = 0.8
+  ) +
   facet_wrap(intervention ~ observation) +
-  theme(legend.position = "None")
+  theme(legend.position = "None") 
+
+
+plt_down = test_df %>%
+  relocate(starts_with("systolic")) %>%
+  pivot_longer(cols = starts_with("systolic"),
+               names_to = "observation",
+               values_to = "values") %>%
+  mutate(
+    intervention = case_when(
+      intervention == 1 ~ "Intervention Group",
+      intervention == 0 ~ "Control Group"
+    )
+  ) %>%
+  filter(observation == "systolic_diff") %>% 
+  ggplot(aes(sample = values, color = intervention)) +
+  stat_qq()+
+  stat_qq_line()+
+  facet_wrap(intervention ~ observation)
+
+show(plt_up / plt_down)
 ```
 
 
