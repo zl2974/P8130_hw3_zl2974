@@ -394,9 +394,9 @@ z_test = function(x = NA,
   
   \ Noted that the population mean and variance are known, and see that the alternative hypothesis is "the true mean is less than 120", so One-side test is perform.
   
-$H_0$: the mean the equal to 120 (no difference)
+$H_0$: the mean the equal to 120 
     
-$H_1$: the mean is not the equal to 120(there's difference)
+$H_1$: the mean is less than 120
 
   The test-statistics is calculate via:
   $$\begin{aligned}
