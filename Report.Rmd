@@ -234,7 +234,7 @@ $$=~(`r prob_1_2_t$conf.int`)$$
 
   \ According to the critical value we choose(`r qt(0.025,70)`), we cannot reject $H_0$ that there's no difference between the difference of baseline systolic BP and 6 month later in intervention group and control group.
 
-3) The testing in 1),2) are based on that sample is draw from a normal distributed population or the distributions fit normality. And thus, if we used these test method upon a skewed(not normal) sample, the result of our interpretation can be wrong. As plotted below, the sample distribution of within pairs difference, although observing a bipeak distribution in the intervention groups, using qq plot help us conclude that the point is center around qq line, satisfied normality requirement for testing.
+3) The testing in 1),2) are based on that sample is draw from a normal distributed population or the distributions fit normality. And thus, if we used these test method upon a skewed(not normal) sample, the result of our interpretation can be wrong. As plotted below, the sample distribution of within pairs difference, although observing a bipeak distribution in the intervention groups, using qq plot help us conclude that the point is center around qq line, satisfied normality requirement for testing. Beside, t-test can produce robust result even with the sampling distribution slightly off from normal distribution.
 
     But if the sample is skewed, there're:
     
