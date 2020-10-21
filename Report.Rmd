@@ -42,7 +42,7 @@ changes in SBP for the two groups (within and between).
 
 *For each question, make sure to state the formulae for hypotheses, test-statistics, decision rules/p-values, and provide interpretations in the context of the problem. Use a type I error of 0.05 for all tests*
 
-```{r table}
+```{r table, include=F, eval = F}
 my_controls <- arsenal::tableby.control(
   total = F,
   test = F,
@@ -228,13 +228,13 @@ t = \frac{\bar{X_1} - \bar{X_0}}
 $$ Reject~H_0~if~|t|>t_{df,1-\alpha/2}$$
 $$ Fail~reject~H_0~if~|t|<t_{df,1-\alpha/2}$$
 
-$$CI = (\bar{X_1}-\bar{X_2}~-~z_{1-\alpha/2}s_{pool}/\sqrt{1/n_1+1/n_0},
-~\bar{X_1}-\bar{X_2}~-~z_{1-\alpha/2}s_{pool}/\sqrt{1/n_1+1/n_0} )$$
+$$CI = (\bar{X_1}-\bar{X_0}~-~z_{1-\alpha/2}s_{pool}/\sqrt{1/n_1+1/n_0},
+~\bar{X_1}-\bar{X_0}~-~z_{1-\alpha/2}s_{pool}/\sqrt{1/n_1+1/n_0} )$$
 $$=~(`r prob_1_2_t$conf.int`)$$
 
   \ According to the critical value we choose(`r qt(0.025,70)`), we cannot reject $H_0$ that there's no difference between the difference of baseline systolic BP and 6 month later in intervention group and control group.
 
-3) The testing in 1),2) are based on that sample is draw from a normal distributed population or the distributions fit normality. And thus, if we used these test method upon a skewed(not normal) sample, the result of our interpretation can be wrong. As plotted below, the sample distribution of within pairs difference, although observing a bipeak distribution in the intervention groups, using qq plot help us conclude that the point is center around qq line, satisfied normality requirement for testing. Beside, t-test can produce robust result even with the sampling distribution slightly off from normal distribution.
+3) The testing in 1),2) are based on that sample is draw from a normal distributed population or the distributions fit normality. And thus, if we used these test method upon a skewed(not normal) sample, the result of our interpretation can be wrong. As plotted below, the sample distribution of within pairs difference, although observing a bi-peak distribution in the intervention groups, using qq plot help us conclude that the points are center around qq line, satisfied normality requirement for testing. Beside, t-test can produce robust result even with the sampling distribution slightly off from normal distribution.
 
     But if the sample is skewed, there're:
     
@@ -481,7 +481,7 @@ d) After the simulation from above, we have $P(Type~I~error \mid H_0)$ of `r sim
 
     \ If we set the sample size to 100 and do a 10000 times simulation we still have 
 `r  z_test(null_sim(sample_size = 100,repeat_time = 10000),mu = 120, sample_variance = 15) %>% janitor::tabyl(Reject_H0) %>% filter(Reject_H0 == T) %>% pull(percent)` of $P(Type~I~error \mid H_0)$
-, which is still around $\alpha$ but not to 0. In fact, the $P(Type~I~error \mid H_0)$ in these simulation is evaluate as the $\hat{p}$ of proportion testing, so as the simulation times( the sample size to estimate $\alpha$) increase, the standard error of the estimate decrease and the estimate is closer to the true value($\alpha$).
+, which is still around $\alpha$ but not to 0. In fact, the $P(Type~I~error \mid H_0)$ in these simulation is evaluated as the $\hat{p}$ of proportion test, so as the simulation times( the sample size to estimate $\alpha$) increase, the standard error of the estimator decreases and the estimate becomes closer to the true value(the $\alpha$). Or in another word, the experiment probability closes to the theoretical probability as the numbers of trials close to infinity.
 
 \ So the only method to lower $P(Type~I~error \mid H_0)$ is to set the $\alpha$ rate to a smaller value before testing. 
 
